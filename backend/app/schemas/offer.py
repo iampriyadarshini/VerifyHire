@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 
+from app.services.findings import RiskAssessment
+
 
 class OfferCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -9,6 +11,7 @@ class OfferCreate(BaseModel):
     message: str = Field(min_length=20, max_length=20_000)
     sender_email: EmailStr
     submitted_url: HttpUrl | None = None
+    company_website: HttpUrl | None = None
 
 
 class OfferResponse(BaseModel):
@@ -19,3 +22,4 @@ class OfferResponse(BaseModel):
     submitted_url: HttpUrl | None = None
     status: str
     message: str
+    assessment: RiskAssessment

@@ -41,6 +41,27 @@ const riskConfig = {
     border: 'border-gray-500/30',
     dot: 'bg-gray-400',
   },
+  'needs-review': {
+    label: 'Needs Review',
+    bg: 'bg-risk-medium/15',
+    text: 'text-risk-medium',
+    border: 'border-risk-medium/30',
+    dot: 'bg-risk-medium',
+  },
+  unverified: {
+    label: 'Unverified',
+    bg: 'bg-gray-500/15',
+    text: 'text-gray-300',
+    border: 'border-gray-500/30',
+    dot: 'bg-gray-400',
+  },
+  'lower-observed-risk': {
+    label: 'Lower Observed Risk',
+    bg: 'bg-risk-safe/15',
+    text: 'text-risk-safe',
+    border: 'border-risk-safe/30',
+    dot: 'bg-risk-safe',
+  },
 }
 
 function RiskBadge({ level = 'unknown', label, size = 'md', showDot = true, className = '' }) {

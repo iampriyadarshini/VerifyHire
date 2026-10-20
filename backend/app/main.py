@@ -1,9 +1,12 @@
 import os
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.offers import router as offers_router
+
+load_dotenv()
 
 
 def _allowed_origins() -> list[str]:
@@ -16,7 +19,7 @@ def _allowed_origins() -> list[str]:
 
 app = FastAPI(
     title="VerifyHire API",
-    description="Offer submission API with in-memory session storage.",
+    description="Offer submission and evidence-based assessment API backed by PostgreSQL.",
     version="1.0.0",
 )
 

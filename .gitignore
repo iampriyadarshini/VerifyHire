@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Backend local environment and generated data
+backend/.env
+backend/.venv/
+backend/verifyhire.db
+backend/**/__pycache__/
+backend/.pytest_cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -10,6 +10,7 @@ const initialFormState = {
   offerMessage: '',
   senderEmail: '',
   jobUrl: '',
+  companyWebsite: '',
   screenshot: null,
 }
 
@@ -46,6 +47,14 @@ function validateForm(formData) {
       new URL(formData.jobUrl.trim())
     } catch {
       errors.jobUrl = 'Please enter a valid URL (e.g., https://example.com/job).'
+    }
+  }
+
+  if (formData.companyWebsite.trim()) {
+    try {
+      new URL(formData.companyWebsite.trim())
+    } catch {
+      errors.companyWebsite = 'Please enter a valid company website URL.'
     }
   }
 
@@ -115,8 +124,10 @@ function SubmitOffer() {
         message: formData.offerMessage.trim(),
         sender_email: formData.senderEmail.trim(),
         submitted_url: formData.jobUrl.trim() || null,
+        company_website: formData.companyWebsite.trim() || null,
       })
       setOfferId(response.id)
+      sessionStorage.setItem('verifyhire.latestOffer', JSON.stringify(response))
       setSubmitted(true)
     } catch (error) {
       const message = error.response?.data?.detail
@@ -214,6 +225,17 @@ function SubmitOffer() {
                     required
                   />
                 </div>
+
+                <FormInput
+                  label="Official Company Website"
+                  name="companyWebsite"
+                  type="url"
+                  placeholder="https://company.com"
+                  value={formData.companyWebsite}
+                  onChange={handleChange}
+                  error={errors.companyWebsite}
+                  helpText="Optional — used only for passive domain comparison."
+                />
 
                 <FormInput
                   label="Offer Message / Description"

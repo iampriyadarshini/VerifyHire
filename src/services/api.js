@@ -17,4 +17,8 @@ export async function fetchAnalysisReport(reportId) {
   return data
 }
 
+export async function fetchOffer(offerId) {
+  return fetchAnalysisReport(offerId)
+}
+
 export { apiClient }
