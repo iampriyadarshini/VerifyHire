@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Button from '../components/ui/Button.jsx'
 import FormInput from '../components/ui/FormInput.jsx'
 import Card from '../components/ui/Card.jsx'
-import { submitOfferForAnalysis } from '../services/api.js'
+import { analyzeEmailFile, analyzeOfferAttachment, submitOfferForAnalysis } from '../services/api.js'
 
 const initialFormState = {
   companyName: '',
@@ -12,6 +12,7 @@ const initialFormState = {
   jobUrl: '',
   companyWebsite: '',
   screenshot: null,
+  emailFile: null,
 }
 
 function validateForm(formData) {
@@ -59,9 +60,9 @@ function validateForm(formData) {
   }
 
   if (formData.screenshot) {
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
     if (!allowedTypes.includes(formData.screenshot.type)) {
-      errors.screenshot = 'Only PNG, JPG, and WebP images are allowed.'
+      errors.screenshot = 'Only PNG, JPG, and JPEG images are allowed.'
     } else if (formData.screenshot.size > 5 * 1024 * 1024) {
       errors.screenshot = 'File size must be under 5MB.'
     }
@@ -78,6 +79,11 @@ function SubmitOffer() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [offerId, setOfferId] = useState('')
+  const [attachmentStatus, setAttachmentStatus] = useState('')
+  const [attachmentError, setAttachmentError] = useState('')
+  const [emailStatus, setEmailStatus] = useState('')
+  const [emailResult, setEmailResult] = useState(null)
+  const [emailError, setEmailError] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -126,7 +132,20 @@ function SubmitOffer() {
         submitted_url: formData.jobUrl.trim() || null,
         company_website: formData.companyWebsite.trim() || null,
       })
+      let attachment = null
+      if (formData.screenshot) {
+        try {
+          setAttachmentStatus('Processing screenshot...')
+          attachment = await analyzeOfferAttachment(response.id, formData.screenshot)
+        } catch (error) {
+          setAttachmentError(error.response?.data?.detail || 'The screenshot could not be processed.')
+        } finally {
+          setAttachmentStatus('')
+        }
+      }
       setOfferId(response.id)
+      response.attachment = attachment
+      response.emailEvidence = emailResult
       sessionStorage.setItem('verifyhire.latestOffer', JSON.stringify(response))
       setSubmitted(true)
     } catch (error) {
@@ -148,6 +167,25 @@ function SubmitOffer() {
     setFileName('')
     setSubmitError('')
     setOfferId('')
+    setAttachmentStatus('')
+    setAttachmentError('')
+    setEmailStatus('')
+    setEmailResult(null)
+    setEmailError('')
+  }
+
+  const handleEmailCheck = async () => {
+    if (!formData.emailFile) return
+    setEmailStatus('Processing email headers...')
+    setEmailError('')
+    try {
+      const result = await analyzeEmailFile(formData.emailFile, formData.companyName.trim(), formData.companyWebsite.trim())
+      setEmailResult(result)
+    } catch (error) {
+      setEmailError(error.response?.data?.detail || 'The email file could not be processed.')
+    } finally {
+      setEmailStatus('')
+    }
   }
 
   if (submitted) {
@@ -165,7 +203,7 @@ function SubmitOffer() {
               Your offer details have been captured successfully.
             </p>
             <p className="text-gray-500 text-sm mb-8">
-              Your submission is stored for this backend session. No verification analysis has been run yet.
+              Your preliminary analysis is ready, including any evidence that was successfully processed.
             </p>
             <p className="text-cyber-teal text-sm font-mono mb-8">
               Offer ID: {offerId}
@@ -286,7 +324,7 @@ function SubmitOffer() {
                       id="screenshot"
                       name="screenshot"
                       type="file"
-                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      accept="image/png,image/jpeg,image/jpg"
                       onChange={handleFileChange}
                       className="hidden"
                     />
@@ -305,7 +343,7 @@ function SubmitOffer() {
                         <p className="text-sm text-gray-400">
                           Click to upload a screenshot of the offer
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, or WebP — Max 5MB</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, or JPEG — Max 5MB</p>
                       </>
                     )}
                   </div>
@@ -316,6 +354,34 @@ function SubmitOffer() {
                       </svg>
                       {errors.screenshot}
                     </p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-navy-700/50 bg-navy-800/20 p-4 space-y-3">
+                  <div>
+                    <label htmlFor="email-file" className="block text-sm font-medium text-gray-300">
+                      Email file <span className="text-gray-500">(optional .eml)</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">Headers are untrusted and checked locally; links and attachments are never opened.</p>
+                  </div>
+                  <input
+                    id="email-file"
+                    type="file"
+                    accept=".eml,message/rfc822"
+                    onChange={(event) => setFormData((prev) => ({ ...prev, emailFile: event.target.files[0] || null }))}
+                    className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-navy-700 file:px-3 file:py-2 file:text-sm file:text-white"
+                  />
+                  <Button type="button" variant="outline" onClick={handleEmailCheck} disabled={!formData.emailFile || Boolean(emailStatus)}>
+                    {emailStatus || 'Analyze .eml headers'}
+                  </Button>
+                  {emailError && <p className="text-risk-high text-xs" role="alert">{emailError}</p>}
+                  {emailResult && (
+                    <div className="space-y-2 text-sm">
+                      <p className="text-cyber-teal">Email analysis: {emailResult.assessment.category}</p>
+                      <p className="text-gray-400">From: {emailResult.metadata.from || 'Not supplied'}</p>
+                      <p className="text-gray-400">SPF: {emailResult.authentication.spf.status}; DKIM: {emailResult.authentication.dkim.status}; DMARC: {emailResult.authentication.dmarc.status}</p>
+                      <p className="text-gray-500 text-xs">{emailResult.limitations[0]}</p>
+                    </div>
                   )}
                 </div>
 
@@ -336,6 +402,8 @@ function SubmitOffer() {
                     {submitError}
                   </div>
                 )}
+                {attachmentStatus && <p className="text-cyber-teal text-sm" role="status">{attachmentStatus}</p>}
+                {attachmentError && <p className="text-risk-high text-sm" role="alert">{attachmentError}</p>}
               </form>
             </Card>
           </div>

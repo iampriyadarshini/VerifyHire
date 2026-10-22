@@ -1,5 +1,6 @@
 import os
 from collections.abc import Generator
+from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -13,7 +14,11 @@ class Base(DeclarativeBase):
 
 
 def database_url() -> str:
-    return os.getenv("DATABASE_URL", "sqlite:///./verifyhire.db")
+    configured_url = os.getenv("DATABASE_URL")
+    if configured_url:
+        return configured_url
+    database_path = Path(__file__).resolve().parent.parent / "verifyhire.db"
+    return f"sqlite:///{database_path.as_posix()}"
 
 
 def _engine_kwargs(url: str) -> dict[str, object]:

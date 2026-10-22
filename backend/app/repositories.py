@@ -18,6 +18,7 @@ def save_offer(db: Session, *, offer: Offer, assessment: RiskAssessment) -> Offe
             recommended_actions=assessment.recommended_actions,
             limitations=assessment.limitations,
             domain_comparison=assessment.domain_comparison,
+            ml_assessment=assessment.ml_assessment.model_dump() if assessment.ml_assessment else None,
             findings=[
                 Finding(
                     rule_id=finding.rule_id,
@@ -65,4 +66,5 @@ def assessment_schema(assessment: Assessment) -> RiskAssessment:
         recommended_actions=assessment.recommended_actions,
         limitations=assessment.limitations,
         domain_comparison=assessment.domain_comparison,
+        ml_assessment=assessment.ml_assessment,
     )

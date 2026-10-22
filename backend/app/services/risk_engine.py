@@ -1,4 +1,4 @@
-from app.services.findings import CheckStatus, Finding, RiskAssessment
+from app.services.findings import CheckStatus, Finding, MLAssessment, RiskAssessment
 
 
 def assess_risk(
@@ -7,12 +7,14 @@ def assess_risk(
     checks: list[CheckStatus],
     company_domains_available: bool,
     domain_comparison: dict[str, str | None],
+    ml_assessment: MLAssessment | None = None,
 ) -> RiskAssessment:
     unique_findings = list({finding.rule_id: finding for finding in findings}.values())
     high_count = sum(finding.severity == "high" for finding in unique_findings)
     medium_count = sum(finding.severity == "medium" for finding in unique_findings)
-    completed_count = sum(check.status == "completed" for check in checks)
-    unavailable_count = sum(check.status == "unavailable" for check in checks)
+    confidence_checks = [check for check in checks if not check.check_id.startswith("ml-")]
+    completed_count = sum(check.status == "completed" for check in confidence_checks)
+    unavailable_count = sum(check.status == "unavailable" for check in confidence_checks)
 
     if high_count:
         category = "High Risk"
@@ -47,4 +49,5 @@ def assess_risk(
         recommended_actions=actions,
         limitations=limitations,
         domain_comparison=domain_comparison,
+        ml_assessment=ml_assessment,
     )

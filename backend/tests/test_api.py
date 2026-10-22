@@ -5,6 +5,71 @@ def test_health_endpoint(client) -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_documentation_and_api_routes_are_registered(client) -> None:
+    docs_response = client.get("/docs")
+    openapi_response = client.get("/openapi.json")
+
+    assert docs_response.status_code == 200
+    assert openapi_response.status_code == 200
+    paths = openapi_response.json()["paths"]
+    assert "/api/v1/health" in paths
+    assert "/api/v1/offers" in paths
+    assert "/api/v1/offers/{offer_id}/attachments" in paths
+    assert "/api/v1/email-checks" in paths
+
+
+def test_offer_submission_accepts_frontend_payload(client) -> None:
+    response = client.post(
+        "/api/v1/offers",
+        json={
+            "company_name": "Example Labs",
+            "job_title": "Security Intern",
+            "message": "Please review this complete offer message before accepting the position.",
+            "sender_email": "recruiter@example.com",
+            "submitted_url": None,
+            "company_website": None,
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "received"
+
+
+def test_offer_response_includes_optional_ml_assessment(client, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.services.analysis.predict",
+        lambda text: type(
+            "PredictionStub",
+            (),
+            {
+                "status": "unavailable",
+                "explanation": "The ML model is unavailable.",
+                "as_dict": lambda self: {
+                    "status": "unavailable",
+                    "model_version": None,
+                    "label": None,
+                    "suspicious_score": None,
+                    "influential_terms": [],
+                    "explanation": "The ML model is unavailable.",
+                    "limitation": "Test limitation.",
+                },
+            },
+        )(),
+    )
+    response = client.post(
+        "/api/v1/offers",
+        json={
+            "company_name": "Example Labs",
+            "job_title": "Security Intern",
+            "message": "Please review this complete offer message before accepting the position.",
+            "sender_email": "recruiter@example.com",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["assessment"]["ml_assessment"]["status"] == "unavailable"
+
+
 def test_create_and_retrieve_offer(client) -> None:
     payload = {
         "company_name": "Example Labs",

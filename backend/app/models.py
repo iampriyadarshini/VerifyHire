@@ -35,6 +35,7 @@ class Assessment(Base):
     recommended_actions: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     limitations: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     domain_comparison: Mapped[dict[str, str | None]] = mapped_column(JSON, nullable=False, default=dict)
+    ml_assessment: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
     offer: Mapped[Offer] = relationship(back_populates="assessment")
     findings: Mapped[list["Finding"]] = relationship(
@@ -56,3 +57,15 @@ class Finding(Base):
     source: Mapped[str] = mapped_column(String(30), nullable=False)
 
     assessment: Mapped[Assessment] = relationship(back_populates="findings")
+
+
+class EvidenceRecord(Base):
+    __tablename__ = "evidence_records"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    offer_id: Mapped[str | None] = mapped_column(ForeignKey("offers.id", ondelete="CASCADE"))
+    evidence_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    result: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    offer: Mapped[Offer | None] = relationship()

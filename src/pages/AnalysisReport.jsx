@@ -143,6 +143,129 @@ function AnalysisReport() {
           )}
         </Card>
 
+        <Card hover={false} className="mb-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Experimental ML signal</h2>
+          {!assessment.ml_assessment || assessment.ml_assessment.status === 'unavailable' ? (
+            <p className="text-gray-400 text-sm">
+              The optional ML classifier is not trained or is unavailable. Rule-based analysis and evidence findings remain active.
+            </p>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <span className="text-cyber-teal font-medium">
+                  {assessment.ml_assessment.label === 'suspicious' ? 'Suspicious text pattern' : 'No strong suspicious text pattern'}
+                </span>
+                <span className="text-gray-500 text-xs font-mono">
+                  Model {assessment.ml_assessment.model_version}
+                </span>
+              </div>
+              <p className="text-gray-300 text-sm mb-3">{assessment.ml_assessment.explanation}</p>
+              {assessment.ml_assessment.influential_terms.length > 0 && (
+                <p className="text-gray-400 text-sm mb-3">
+                  Influential text indicators: {assessment.ml_assessment.influential_terms.join(', ')}
+                </p>
+              )}
+              <p className="text-gray-500 text-xs">{assessment.ml_assessment.limitation}</p>
+            </>
+          )}
+          <p className="text-gray-500 text-xs mt-3">
+            This experimental signal complements the independently evaluated rules and evidence; it is not a verified fraud probability.
+          </p>
+        </Card>
+
+        {offer.attachment && (
+          <Card hover={false} className="mb-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Uploaded evidence</h2>
+            <p className="text-gray-400 text-sm mb-3">
+              OCR status: <span className="text-white">{offer.attachment.ocr.status}</span>
+              {' '}({offer.attachment.image.width} × {offer.attachment.image.height})
+            </p>
+            <p className="text-cyber-teal text-sm mb-3">
+              Evidence assessment: {offer.attachment.assessment.category}
+            </p>
+            {offer.attachment.assessment.findings.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {offer.attachment.assessment.findings.map((finding) => (
+                  <div key={finding.rule_id} className="rounded-lg bg-navy-800/40 p-3 text-sm">
+                    <p className="text-white font-medium">{finding.title}</p>
+                    <p className="text-gray-400 mt-1">{finding.explanation}</p>
+                    <p className="text-gray-500 text-xs mt-1">Source: {finding.source}</p>
+                    {finding.recommended_action && (
+                      <p className="text-cyber-teal text-xs mt-1">Recommendation: {finding.recommended_action}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="rounded-xl bg-navy-800/40 border border-navy-700/40 p-4 mb-4">
+              <h3 className="text-white font-medium mb-2">Extracted text</h3>
+              <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                {offer.attachment.ocr.text || 'No readable text was extracted. The system did not invent a transcription.'}
+              </p>
+            </div>
+            <h3 className="text-white font-medium mb-2">QR code findings</h3>
+            {offer.attachment.qr_codes.length === 0 ? (
+              <p className="text-gray-400 text-sm">No readable QR code was detected.</p>
+            ) : (
+              <div className="space-y-2">
+                {offer.attachment.qr_codes.map((qr) => (
+                  <div key={qr.content} className="rounded-xl border border-risk-medium/40 bg-risk-medium/10 p-3 text-sm">
+                    <p className="text-white break-all">{qr.content}</p>
+                    <p className="text-risk-medium mt-1">{qr.warning}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {offer.emailEvidence && (
+          <Card hover={false} className="mb-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Email evidence</h2>
+            <p className="text-cyber-teal text-sm mb-3">
+              Evidence assessment: {offer.emailEvidence.assessment.category}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-sm">
+              {[
+                ['From', offer.emailEvidence.metadata.from],
+                ['Reply-To', offer.emailEvidence.metadata.reply_to],
+                ['Return-Path', offer.emailEvidence.metadata.return_path],
+                ['Received headers', offer.emailEvidence.metadata.received_count],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg bg-navy-800/40 p-3">
+                  <p className="text-gray-500 text-xs">{label}</p>
+                  <p className="text-gray-300 break-all">{value || 'Not supplied'}</p>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3 mb-4 text-sm">
+              {['spf', 'dkim', 'dmarc'].map((name) => (
+                <div key={name} className="rounded-lg bg-navy-800/40 p-3">
+                  <p className="text-gray-500 text-xs uppercase">{name}</p>
+                  <p className="text-gray-300">{offer.emailEvidence.authentication[name]?.status || 'missing'}</p>
+                </div>
+              ))}
+            </div>
+            {offer.emailEvidence.assessment.findings.length > 0 && (
+              <div className="space-y-2">
+                {offer.emailEvidence.assessment.findings.map((finding) => (
+                  <div key={finding.rule_id} className="rounded-lg bg-navy-800/40 p-3 text-sm">
+                    <p className="text-white font-medium">{finding.title}</p>
+                    <p className="text-gray-400 mt-1">{finding.explanation}</p>
+                    <p className="text-gray-500 text-xs mt-1">Source: {finding.source}</p>
+                    {finding.recommended_action && (
+                      <p className="text-cyber-teal text-xs mt-1">Recommendation: {finding.recommended_action}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-gray-500 text-xs mt-4">
+              Authentication headers are user-supplied and may be forged. Missing evidence is reported as unknown, not failed.
+            </p>
+          </Card>
+        )}
+
         <Card hover={false}>
           <h2 className="text-xl font-semibold text-white mb-4">Limitations and uncertainty</h2>
           <ul className="space-y-2">

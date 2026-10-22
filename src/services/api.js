@@ -21,4 +21,24 @@ export async function fetchOffer(offerId) {
   return fetchAnalysisReport(offerId)
 }
 
+export async function analyzeOfferAttachment(offerId, file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await apiClient.post(`/api/v1/offers/${encodeURIComponent(offerId)}/attachments`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}
+
+export async function analyzeEmailFile(file, companyName, companyWebsite) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('company_name', companyName || 'Unknown company')
+  if (companyWebsite) formData.append('company_website', companyWebsite)
+  const { data } = await apiClient.post('/api/v1/email-checks', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}
+
 export { apiClient }

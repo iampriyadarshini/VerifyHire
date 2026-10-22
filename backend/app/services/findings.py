@@ -12,7 +12,7 @@ class Finding(BaseModel):
     explanation: str
     evidence: str
     recommended_action: str | None = None
-    source: Literal["message", "company", "url", "availability"]
+    source: Literal["message", "company", "url", "availability", "ml"]
 
 
 class CheckStatus(BaseModel):
@@ -20,6 +20,16 @@ class CheckStatus(BaseModel):
     label: str
     status: Literal["completed", "unavailable"]
     detail: str
+
+
+class MLAssessment(BaseModel):
+    status: Literal["available", "unavailable"]
+    model_version: str | None = None
+    label: Literal["suspicious", "legitimate"] | None = None
+    suspicious_score: float | None = None
+    influential_terms: list[str] = Field(default_factory=list)
+    explanation: str
+    limitation: str
 
 
 class RiskAssessment(BaseModel):
@@ -35,3 +45,4 @@ class RiskAssessment(BaseModel):
     recommended_actions: list[str]
     limitations: list[str]
     domain_comparison: dict[str, str | None] = Field(default_factory=dict)
+    ml_assessment: MLAssessment | None = None

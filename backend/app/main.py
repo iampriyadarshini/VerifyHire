@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.offers import router as offers_router
+from app.api.routes.evidence import router as evidence_router
 
 load_dotenv()
 
@@ -38,3 +39,4 @@ async def health() -> dict[str, str]:
 
 
 app.include_router(offers_router, prefix="/api/v1")
+app.include_router(evidence_router, prefix="/api/v1")
