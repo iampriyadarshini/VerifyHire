@@ -18,6 +18,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/submit" element={<SubmitOffer />} />
             <Route path="/report" element={<AnalysisReport />} />
+            <Route path="/report/:offerId" element={<AnalysisReport />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/community" element={<CommunityReports />} />
             <Route path="/about" element={<AboutSafety />} />

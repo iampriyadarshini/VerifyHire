@@ -13,3 +13,4 @@ pytesseract==0.3.13
 opencv-python-headless==4.11.0.86
 python-multipart==0.0.20
 scikit-learn==1.6.1
+openai==1.109.1

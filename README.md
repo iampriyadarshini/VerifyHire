@@ -312,12 +312,38 @@ Set-Location backend
 .\.venv\Scripts\python.exe -m pytest tests
 ```
 
+<<<<<<< HEAD
 Build the frontend from its package directory:
+=======
+## Configuration
+
+`backend/.env.example` documents:
+
+- `ALLOWED_ORIGINS`: comma-separated frontend origins for CORS.
+- `DATABASE_URL`: SQLAlchemy database URL. Production should use PostgreSQL; tests use an isolated in-memory SQLite database.
+- `VERIFIED_COMPANY_DOMAINS`: comma-separated, locally maintained registered domains. Leave empty when no reference data is available.
+- `RECRUITMENT_PLATFORM_DOMAINS`: comma-separated domains treated as possible third-party recruiter domains.
+- `VERIFYHIRE_SCORE_*`: optional weights and thresholds for the explainable 0-100 risk score. Defaults are documented in `backend/.env.example`; duplicate rule IDs are scored once.
+- `OPENAI_API_KEY`: optional server-side key for the report-scoped VerifyHire AI Assistant. Leave blank to show the assistant-unavailable state.
+- `OPENAI_MODEL`: OpenAI model name, default `gpt-4o-mini`.
+- `OPENAI_TIMEOUT_SECONDS` and `OPENAI_MAX_OUTPUT_TOKENS`: assistant request limits.
+
+The analysis uses local configuration and passive parsing only. It does not open submitted URLs, follow redirects, resolve hostnames, access private networks, or query external reputation services. The URL analyzer uses a bundled Public Suffix List snapshot through `tldextract` and disables list downloads.
+
+The AI Assistant is an optional backend feature. To enable it, set `OPENAI_API_KEY` in `backend/.env`; never place this key in frontend environment variables or source code. The assistant is scoped to the requested report ID and uses only that report's stored assessment evidence. It does not browse or independently verify companies, and its chat history is kept only in the browser session.
+
+Offers, assessments, and findings are persisted in PostgreSQL after migrations are applied. Database credentials belong only in `backend/.env`, which is ignored by Git. No analysis is a guarantee of authenticity: legitimate companies can be impersonated, and legitimate recruiters can use third-party platforms.
+
+## Frontend
+
+In a separate PowerShell terminal:
+>>>>>>> 22d88f8 (Enhance VerifyHire risk scoring and AI assistant)
 
 ```powershell
 npm run build
 ```
 
+<<<<<<< HEAD
 Test the main workflows before release, including offer submission, report retrieval, image uploads, email analysis, database persistence, and error handling. Document test results only after actually running the tests.
 
 ## Configuration
@@ -392,3 +418,56 @@ Add a license file if you intend to distribute the project publicly. Specify an 
 ---
 
 **VerifyHire — Helping job seekers make safer, evidence-informed decisions.**
+=======
+The frontend reads `VITE_API_BASE_URL` from `.env`. Do not put secrets in frontend environment variables.
+
+## Testing
+
+Run the backend tests from the backend directory:
+
+```powershell
+Set-Location backend
+.\.venv\Scripts\python.exe -m pytest tests
+```
+
+Run the frontend checks from the repository root:
+
+```powershell
+npm run lint
+npm run build
+```
+
+The backend tests use an isolated in-memory SQLite database. For local API
+development, apply migrations before starting the server. The default local
+database is `backend/verifyhire.db` when `DATABASE_URL` is not set.
+
+## Deployment
+
+### Frontend on Vercel
+
+Create a Vercel project using the repository root as its project directory.
+The default Vite settings use `npm run build` and publish `dist`. Set the
+production environment variable `VITE_API_BASE_URL` to the public Render API
+URL, without a trailing slash. `vercel.json` keeps client-side routes working
+when a report URL is opened directly.
+
+### Backend on Render
+
+The included `render.yaml` defines the production service. Render installs
+`backend/requirements.txt` and starts:
+
+```text
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Set these Render environment variables without committing their values:
+
+- `DATABASE_URL`: PostgreSQL SQLAlchemy URL for the production database.
+- `ALLOWED_ORIGINS`: the exact Vercel origin (comma-separated if needed).
+- `VERIFIED_COMPANY_DOMAINS`: optional comma-separated reference domains.
+- `RECRUITMENT_PLATFORM_DOMAINS`: optional comma-separated recruiter domains.
+
+Run `alembic upgrade head` against the production database before serving
+traffic. Verify `GET /api/v1/health`, the generated `/docs`, and a complete
+offer submission/report retrieval workflow after deployment. No deployment is
+performed by this repository configuration.

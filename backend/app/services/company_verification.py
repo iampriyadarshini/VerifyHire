@@ -1,7 +1,7 @@
 import os
 import re
 
-from app.services.findings import CheckStatus, Finding
+from app.services.findings import CheckStatus, CompanySenderVerification, Finding
 from app.services.url_analyzer import normalize_domain
 
 
@@ -15,6 +15,72 @@ def _configured_domains(variable: str) -> set[str]:
 
 def _company_key(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+def build_company_sender_verification(
+    *,
+    company_name: str,
+    sender_email: str,
+    domain_comparison: dict[str, str | None],
+    findings: list[Finding],
+) -> CompanySenderVerification:
+    sender_domain = domain_comparison.get("sender_email_domain")
+    website_domain = domain_comparison.get("company_website_domain")
+    official_domains = _configured_domains("VERIFIED_COMPANY_DOMAINS")
+    mismatch_ids = {
+        "COMPANY_EMAIL_DOMAIN_MISMATCH",
+        "DOMAIN_MISMATCH",
+        "OFFICIAL_DOMAIN_NOT_MATCHED",
+    }
+    mismatch_findings = [finding for finding in findings if finding.rule_id in mismatch_ids]
+    evidence = [finding.evidence for finding in mismatch_findings]
+
+    if mismatch_findings:
+        return CompanySenderVerification(
+            status="MISMATCH",
+            company_name=company_name,
+            sender_email=sender_email,
+            explanation="The available submitted information contains an inconsistency between the claimed company and sender identity.",
+            evidence=evidence,
+            recommended_action="Verify the recruiter through contact information obtained independently from the company's official website.",
+        )
+
+    if (
+        sender_domain
+        and website_domain
+        and sender_domain == website_domain
+        and official_domains
+        and sender_domain in official_domains
+    ):
+        return CompanySenderVerification(
+            status="VERIFIED",
+            company_name=company_name,
+            sender_email=sender_email,
+            explanation="The sender domain matches the supplied company website and a locally configured official-domain reference. This supports the association but does not guarantee authenticity.",
+            evidence=[
+                f"Sender domain: {sender_domain}",
+                f"Company website domain: {website_domain}",
+                "The sender domain matched a configured official-domain reference.",
+            ],
+            recommended_action="Still review the offer details and confirm the role through an independently obtained company contact.",
+        )
+
+    evidence = [
+        item
+        for item in (
+            f"Sender domain: {sender_domain}" if sender_domain else None,
+            f"Company website domain: {website_domain}" if website_domain else None,
+        )
+        if item
+    ]
+    return CompanySenderVerification(
+        status="UNABLE TO VERIFY",
+        company_name=company_name,
+        sender_email=sender_email,
+        explanation="The available local evidence is insufficient to independently establish that the sender represents the claimed company. A matching name or email domain alone is not proof of authenticity.",
+        evidence=evidence or ["No comparable company or sender domain evidence was supplied."],
+        recommended_action="Verify the recruiter through contact information obtained independently from the company's official website.",
+    )
 
 
 def verify_company(

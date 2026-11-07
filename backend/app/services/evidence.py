@@ -141,4 +141,6 @@ def email_assessment(parsed: dict[str, Any], company_name: str, company_website:
         checks=message_checks + url_checks + company_checks,
         company_domains_available=bool(company_website or domains["sender_email_domain"]),
         domain_comparison=domains,
+        company_name=company_name,
+        sender_email=sender_email,
     )

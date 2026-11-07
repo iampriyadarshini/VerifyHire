@@ -60,4 +60,6 @@ def analyze_offer(
         company_domains_available=bool(company_website or domains["job_url_domain"]),
         domain_comparison=domains,
         ml_assessment=ml_assessment,
+        company_name=company_name,
+        sender_email=sender_email,
     )

@@ -29,3 +29,8 @@ backend/.pytest_cache/
 *.njsproj
 *.sln
 *.sw?
+
+*.db
+*.sqlite3
+__pycache__/
+*.py[cod]

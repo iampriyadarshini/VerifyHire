@@ -21,6 +21,11 @@ export async function fetchOffer(offerId) {
   return fetchAnalysisReport(offerId)
 }
 
+export async function chatWithReportAssistant(reportId, message) {
+  const { data } = await apiClient.post(`/api/reports/${encodeURIComponent(reportId)}/assistant/chat`, { message })
+  return data
+}
+
 export async function analyzeOfferAttachment(offerId, file) {
   const formData = new FormData()
   formData.append('file', file)

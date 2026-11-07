@@ -11,7 +11,7 @@ function Dashboard() {
               <span className="text-cyber-teal">Dashboard</span>
             </h1>
             <p className="text-gray-400">
-              Your verification activity will appear here once the service is connected.
+              Your verification activity will appear here as you process submissions.
             </p>
           </div>
           <Button to="/submit" variant="primary">

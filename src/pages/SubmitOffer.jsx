@@ -209,7 +209,7 @@ function SubmitOffer() {
               Offer ID: {offerId}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button to="/report" variant="secondary">
+              <Button to={`/report/${offerId}`} variant="secondary">
                 View Report Page
               </Button>
               <Button onClick={handleReset} variant="outline">

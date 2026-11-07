@@ -22,7 +22,7 @@ def _response(offer: Offer) -> OfferResponse:
         job_title=offer.job_title,
         sender_email=offer.sender_email,
         submitted_url=offer.submitted_url,
-        assessment=assessment_schema(offer.assessment),
+        assessment=assessment_schema(offer.assessment, offer=offer),
         status="received",
         message="Offer received. This is a preliminary, evidence-based assessment.",
     )

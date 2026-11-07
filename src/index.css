@@ -80,6 +80,31 @@ body {
   background-size: 40px 40px;
 }
 
+/* Keep Chrome autofill aligned with the normal dark and focused input states. */
+input:-webkit-autofill:not(:focus),
+textarea:-webkit-autofill:not(:focus) {
+  -webkit-text-fill-color: white;
+  -webkit-box-shadow: 0 0 0 1000px rgba(19, 27, 54, 0.6) inset;
+  caret-color: white;
+}
+
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: black;
+  -webkit-box-shadow: 0 0 0 1000px white inset;
+  caret-color: black;
+}
+
+.verifyhire-form-input:focus {
+  background-color: white !important;
+  color: black !important;
+}
+
+.verifyhire-form-input:focus::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
 /* ===== Animated Gradient Background ===== */
 .bg-gradient-animated {
   background: linear-gradient(135deg, #0a0e1a 0%, #131b36 30%, #0d1326 60%, #1a2548 100%);

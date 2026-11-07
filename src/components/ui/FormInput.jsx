@@ -30,8 +30,8 @@ function FormInput({
         onChange={onChange}
         required={required}
         rows={isTextarea ? 4 : undefined}
-        className={`w-full px-4 py-3 bg-navy-800/60 border rounded-xl text-white placeholder-gray-500 
-          transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyber-teal/40 focus:border-cyber-teal/60
+        className={`verifyhire-form-input w-full px-4 py-3 bg-navy-800/60 border rounded-xl text-white placeholder-gray-500
+          transition-all duration-200 focus:bg-white focus:text-black focus:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyber-teal/40 focus:border-cyber-teal/60
           ${error ? 'border-risk-high/60 focus:ring-risk-high/40 focus:border-risk-high/60' : 'border-navy-600/50 hover:border-navy-500'}
           ${isTextarea ? 'resize-none' : ''}`}
         {...props}

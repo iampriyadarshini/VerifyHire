@@ -18,7 +18,8 @@ def test_documentation_and_api_routes_are_registered(client) -> None:
     assert "/api/v1/email-checks" in paths
 
 
-def test_offer_submission_accepts_frontend_payload(client) -> None:
+def test_offer_submission_accepts_frontend_payload(client, monkeypatch) -> None:
+    monkeypatch.setenv("VERIFIED_COMPANY_DOMAINS", "")
     response = client.post(
         "/api/v1/offers",
         json={
@@ -32,7 +33,12 @@ def test_offer_submission_accepts_frontend_payload(client) -> None:
     )
 
     assert response.status_code == 201
+    assessment = response.json()["assessment"]
     assert response.json()["status"] == "received"
+    assert 0 <= assessment["risk_score"] <= 100
+    assert assessment["risk_level"] in {"Low Risk", "Moderate Risk", "High Risk", "Critical Risk"}
+    assert "explanation" in assessment["score_breakdown"]
+    assert assessment["company_sender_verification"]["status"] == "UNABLE TO VERIFY"
 
 
 def test_offer_response_includes_optional_ml_assessment(client, monkeypatch) -> None:
@@ -119,6 +125,64 @@ def test_missing_offer_returns_not_found(client) -> None:
     assert response.json()["detail"] == "Offer not found."
 
 
+def test_assistant_requires_provider_configuration(client, monkeypatch) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    create_response = client.post(
+        "/api/v1/offers",
+        json={
+            "company_name": "Example Labs",
+            "job_title": "Security Intern",
+            "message": "Please review this complete offer message before accepting the position.",
+            "sender_email": "recruiter@example.com",
+        },
+    )
+
+    response = client.post(
+        f"/api/reports/{create_response.json()['id']}/assistant/chat",
+        json={"message": "Why is this sender not verified?"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "The AI Assistant is not configured."
+
+
+def test_assistant_uses_requested_report_and_preserves_assessment(client, monkeypatch) -> None:
+    create_response = client.post(
+        "/api/v1/offers",
+        json={
+            "company_name": "Example Labs",
+            "job_title": "Security Intern",
+            "message": "Please review this complete offer message before accepting the position.",
+            "sender_email": "recruiter@example.com",
+        },
+    )
+    report = create_response.json()
+
+    monkeypatch.setattr(
+        "app.api.routes.assistant.chat_about_report",
+        lambda *, offer, question: {
+            "report_id": offer.id,
+            "answer": f"Based only on {offer.company_name}: {question}",
+            "verification_status": "UNABLE TO VERIFY",
+            "evidence": ["Sender domain: example.com"],
+            "limitations": ["This is preliminary."],
+            "provider": "openai",
+        },
+    )
+
+    response = client.post(
+        f"/api/reports/{report['id']}/assistant/chat",
+        json={"message": "Why is this sender not verified?"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["report_id"] == report["id"]
+    assert response.json()["answer"].startswith("Based only on Example Labs")
+    saved_report = client.get(f"/api/v1/offers/{report['id']}").json()
+    assert saved_report["assessment"]["risk_score"] == report["assessment"]["risk_score"]
+    assert saved_report["assessment"]["category"] == report["assessment"]["category"]
+
+
 def test_offer_with_payment_request_returns_high_risk(client) -> None:
     response = client.post(
         "/api/v1/offers",
@@ -133,6 +197,13 @@ def test_offer_with_payment_request_returns_high_risk(client) -> None:
     assert response.status_code == 201
     assessment = response.json()["assessment"]
     assert assessment["category"] == "High Risk"
+    assert assessment["risk_score"] >= 30
+    assert assessment["risk_level"] in {
+        "Low Risk",
+        "Moderate Risk",
+        "High Risk",
+        "Critical Risk",
+    }
     assert {finding["rule_id"] for finding in assessment["findings"]} >= {
         "MSG_PAYMENT_REQUEST",
     }

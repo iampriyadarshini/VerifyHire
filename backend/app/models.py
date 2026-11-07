@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, JSON, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, JSON, String, Text, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -36,6 +36,9 @@ class Assessment(Base):
     limitations: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     domain_comparison: Mapped[dict[str, str | None]] = mapped_column(JSON, nullable=False, default=dict)
     ml_assessment: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    risk_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    risk_level: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    score_breakdown: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
     offer: Mapped[Offer] = relationship(back_populates="assessment")
     findings: Mapped[list["Finding"]] = relationship(
